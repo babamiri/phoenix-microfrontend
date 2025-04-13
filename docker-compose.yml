@@ -1,0 +1,58 @@
+services:
+  host:
+    build:
+      context: ./host
+    ports:
+      - "4321:4321"
+    depends_on:
+      - app-1-react
+      - app-2-react
+      - app-solid-js
+      - app-3-react
+    networks:
+      - microfrontend-network
+
+  app-1-react:
+    build:
+      context: ./app-1-react
+    ports:
+      - "7100:7100"
+    networks:
+      - microfrontend-network
+    environment:
+      - CORS_ORIGIN=http://localhost:4321
+
+  app-2-react:
+    build:
+      context: ./app-2-react
+    ports:
+      - "7200:7200"
+    networks:
+      - microfrontend-network
+    environment:
+      - CORS_ORIGIN=http://localhost:4321
+  
+  app-3-react:
+    build:
+      context: ./app-3-react
+    ports:
+      - "7400:7400"
+    networks:
+      - microfrontend-network
+    environment:
+      - CORS_ORIGIN=http://localhost:4321
+
+
+  app-solid-js:
+    build:
+      context: ./app-solid-js
+    ports:
+      - "7300:7300"
+    networks:
+      - microfrontend-network
+    environment:
+      - CORS_ORIGIN=http://localhost:4321
+      
+networks:
+  microfrontend-network:
+    driver: bridge
