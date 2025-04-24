@@ -1,27 +1,86 @@
 ---
 import ReactComponent from "../components/ReactComponent.jsx";
 import SolidComponent from "../components/SolidComponent.jsx";
+
+// متغیر برای ذخیره وضعیت احراز هویت در سمت سرور (اختیاری)
+let authenticated = false;
+let userToken = null;
 ---
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
-    <title>{"Astro example"}</title>
+    <title>Astro example</title>
     <script type="importmap">
-    {
-      "imports": {
-        "react": "https://esm.sh/react@19",
-        "react-dom": "https://esm.sh/react-dom@19",
-        "solid-js": "https://esm.sh/solid-js"
+      {
+        "imports": {
+          "react": "https://esm.sh/react@19",
+          "react-dom": "https://esm.sh/react-dom@19",
+          "solid-js": "https://esm.sh/solid-js",
+          "keycloak-js": "https://esm.sh/keycloak-js@latest"
+        }
       }
-    }
+    </script>
+    <script type="module">
+      import Keycloak from 'keycloak-js';
+
+      const keycloak = new Keycloak({
+        url: 'https://localhost:8443/',
+        realm: 'bimehtakmili-01',
+        clientId: 'bimehtakmili-agent'
+      });
+
+      async function initializeKeycloak() {
+        try {
+          const authenticated = await keycloak.init({ onLoad: 'check-sso' });
+          console.log(`کاربر ${authenticated ? 'احراز هویت شده' : 'احراز هویت نشده'}`);
+          if (authenticated) {
+            console.log('توکن:', keycloak.token);
+            // ارسال توکن به کامپوننت‌ها یا ذخیره برای استفاده بعدی
+            window.dispatchEvent(new CustomEvent('authChange', { 
+              detail: { authenticated: true, token: keycloak.token } 
+            }));
+            // آپدیت UI با جاوااسکریپت
+            document.getElementById('auth-status').textContent = 'شما وارد شده‌اید!';
+            document.getElementById('login-button').style.display = 'none';
+            document.getElementById('logout-button').style.display = 'inline-block';
+          } else {
+            console.log('کاربر نیاز به ورود دارد');
+            document.getElementById('auth-status').textContent = 'لطفاً وارد شوید.';
+            document.getElementById('login-button').style.display = 'inline-block';
+            document.getElementById('logout-button').style.display = 'none';
+          }
+        } catch (error) {
+          console.error('خطا در مقداردهی Keycloak:', error);
+          document.getElementById('auth-status').textContent = 'خطا در احراز هویت!';
+        }
+      }
+
+      // ذخیره keycloak برای دسترسی در توابع دیگر
+      window.keycloak = keycloak;
+
+      // تابع لاگین
+      window.login = function () {
+        keycloak.login();
+      };
+
+      // تابع لاگ‌اوت
+      window.logout = function () {
+        keycloak.logout({ redirectUri: window.location.origin });
+      };
+
+      // شروع فرآیند احراز هویت
+      initializeKeycloak();
     </script>
   </head>
   <body>
     <main>
       <h1>Welcome to Astro</h1>
+      <p id="auth-status">در حال بررسی وضعیت...</p>
+      <button id="login-button" onclick="window.login()">ورود</button>
+      <button id="logout-button" onclick="window.logout()" style="display: none;">خروج</button>
       <ReactComponent client:only="react" />
       <SolidComponent client:only="solid" />
     </main>
@@ -29,20 +88,40 @@ import SolidComponent from "../components/SolidComponent.jsx";
 </html>
 
 <style>
-html {
-  font-family: system-ui, sans-serif;
-  background-color: #f6f6f6;
-}
+  html {
+    font-family: system-ui, sans-serif;
+    background-color: #f6f6f6;
+  }
 
-main {
-  margin: auto;
-  padding: 1.5rem;
-  max-width: 60ch;
-}
+  main {
+    margin: auto;
+    padding: 1.5rem;
+    max-width: 60ch;
+  }
 
-h1 {
-  font-size: 3rem;
-  font-weight: 800;
-  margin: 0;
-}
+  h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    margin: 0;
+  }
+
+  button {
+    padding: 0.5rem 1rem;
+    margin: 0.5rem;
+    font-size: 1rem;
+    cursor: pointer;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+  }
+
+  button:hover {
+    background-color: #0056b3;
+  }
+
+  #auth-status {
+    margin: 1rem 0;
+    font-size: 1.2rem;
+  }
 </style>

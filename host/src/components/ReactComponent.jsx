@@ -10,8 +10,8 @@ const ReactComponent = () => (
     {/* <MicroFrontendB /> */}
     {/* <MicroFrontendX /> */}
     <MicroFrontendN />
-    <h1>reusable app</h1>
-    <MicroFrontendN />
+    {/* <h1>reusable app</h1> */}
+    {/* <MicroFrontendN /> */}
   </>
 );
 
